@@ -1,0 +1,45 @@
+# Unity默认忽略项
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Cc]rashReport/
+
+# Unity包管理缓存
+Library/PackageCache/
+Library/Artifacts/
+Library/ShaderCache/
+
+# 编辑器配置（个人偏好，不上传）
+.vs/
+.vscode/
+*.sln
+*.csproj
+*.unityproj
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 构建产物
+Build/
+build/
+*.apk
+*.unitypackage
+
+# 日志
+*.log
+
+# 忽略VS配置文件（消除换行符警告）
+.vsconfig
