@@ -1,3 +1,5 @@
+//--------------------------------------------------------------------------------------------------
+//E:\Unity\Project\MechanicsDemoSystem\Assets\Project\Scripts\UI\GlobalUIController.cs
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -18,10 +20,9 @@ public class GlobalUIController : MonoBehaviour
     public GameObject objectDisplayPanel;    // 物体实时展示面板
 
     [Header("控制按钮引用")]
-    public Button btnStart;
-    public Button btnReset;
-    public Button btnPause;
-    public TMP_Text btnPauseText;
+    public Button controlBtn;
+    public Button resetBtn;
+    public TMP_Text controlBtnText;
 
     private bool isMotionRunning = false;    // 运动是否进行中
     private bool isMotionPaused = false;     // 运动是否暂停
@@ -49,7 +50,7 @@ public class GlobalUIController : MonoBehaviour
         sceneSettingPanel.SetActive(true);
         objectSettingPanel.SetActive(true);
         objectDisplayPanel.SetActive(false);
-        btnPauseText.text = "暂停";
+        controlBtnText.text = "开始";
         isMotionRunning = false;
         isMotionPaused = false;
     }
@@ -59,29 +60,50 @@ public class GlobalUIController : MonoBehaviour
     /// </summary>
     private void BindButtonEvents()
     {
-        btnStart.onClick.AddListener(OnStartClick);
-        btnReset.onClick.AddListener(OnResetClick);
-        btnPause.onClick.AddListener(OnPauseClick);
+        controlBtn.onClick.AddListener(OnControlClick);
+        resetBtn.onClick.AddListener(OnResetClick);
+        
     }
 
     /// <summary>
-    /// 开始按钮点击
+    /// 合并按钮点击逻辑（统一处理开始/暂停/继续）
     /// </summary>
-    public void OnStartClick()
+    public void OnControlClick()
     {
-        if (isMotionRunning && !isMotionPaused) return; // 已运行且未暂停，不重复点击
+        // 1. 未运行状态：执行“开始”逻辑
+        if (!isMotionRunning)
+        {
+            isMotionRunning = true;
+            isMotionPaused = false;
+            controlBtnText.text = "暂停";  // 文本切换为“暂停”
 
-        isMotionRunning = true;
-        isMotionPaused = false;
-        btnPauseText.text = "暂停";
+            // 切换UI：隐藏可配置面板，显示实时速度面板
+            objectSettingPanel.SetActive(false);
+            objectDisplayPanel.SetActive(true);
 
-        // 切换UI：隐藏可配置项，显示实时项
-        objectSettingPanel.SetActive(false);
-        objectDisplayPanel.SetActive(true);
+            // 通知小球开始运动（复用原有方法）
+            FindObjectOfType<ObjectPhysicsController>().StartMotion();
+        }
+        // 2. 已运行但未暂停：执行“暂停”逻辑
+        else if (isMotionRunning && !isMotionPaused)
+        {
+            isMotionPaused = true;
+            controlBtnText.text = "继续";  // 文本切换为“继续”
 
-        // 通知物体开始运动（通过事件/直接调用，二选一）
-        FindObjectOfType<ObjectPhysicsController>().StartMotion();
+            // 通知小球暂停运动（复用原有方法）
+            FindObjectOfType<ObjectPhysicsController>().PauseMotion(true);
+        }
+        // 3. 已运行且已暂停：执行“继续”逻辑
+        else if (isMotionRunning && isMotionPaused)
+        {
+            isMotionPaused = false;
+            controlBtnText.text = "暂停";  // 文本切换为“暂停”
+
+            // 通知小球继续运动（复用原有方法）
+            FindObjectOfType<ObjectPhysicsController>().PauseMotion(false);
+        }
     }
+
 
     /// <summary>
     /// 重置按钮点击
@@ -93,21 +115,12 @@ public class GlobalUIController : MonoBehaviour
         // 通知场景和物体重置
         FindObjectOfType<ScenePhysicsController>().ResetScene();
         FindObjectOfType<ObjectPhysicsController>().ResetObject();
+        // 相机重置
+        Camera2DTrajectoryViewer camera = FindObjectOfType<Camera2DTrajectoryViewer>();
+        if (camera != null) camera.ResetCamera();
     }
 
-    /// <summary>
-    /// 暂停/继续按钮点击
-    /// </summary>
-    public void OnPauseClick()
-    {
-        if (!isMotionRunning) return; // 未开始运动，不响应
-
-        isMotionPaused = !isMotionPaused;
-        btnPauseText.text = isMotionPaused ? "继续" : "暂停";
-
-        // 通知物体暂停/继续
-        FindObjectOfType<ObjectPhysicsController>().PauseMotion(isMotionPaused);
-    }
+ 
 
     /// <summary>
     /// 外部获取运动状态（供物理脚本调用）

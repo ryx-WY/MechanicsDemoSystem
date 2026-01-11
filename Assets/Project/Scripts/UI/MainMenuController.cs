@@ -1,50 +1,52 @@
-ï»¿using UnityEngine;
+//--------------------------------------------------------------------------------------------------
+//E:\Unity\Project\MechanicsDemoSystem\Assets\Project\Scripts\UI\MainMenuController.cs
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
 public class MainMenuController : MonoBehaviour
 {
-    // UIå…ƒç´ å¼•ç”¨
+    // UIÔªËØÒıÓÃ
     public GameObject loginModal;
     public TMP_InputField usernameInput;
     public TMP_InputField passwordInput;
     public CanvasGroup loginModalGroup;
 
 
-    // åˆå§‹åŒ–
+    // ³õÊ¼»¯
     void Start()
     {
-        // ç¡®ä¿ç™»å½•å¼¹çª—é»˜è®¤æ˜¯å…³é—­çš„
+        // È·±£µÇÂ¼µ¯´°Ä¬ÈÏÊÇ¹Ø±ÕµÄ
         if (loginModal != null)
         {
             loginModal.SetActive(false);
-            Canvas.ForceUpdateCanvases(); // é˜²æ­¢åˆå§‹æ®‹ç•™
+            Canvas.ForceUpdateCanvases(); // ·ÀÖ¹³õÊ¼²ĞÁô
         }
     }
 
-    // ç™»å½•æŒ‰é’®ç‚¹å‡»
+    // µÇÂ¼°´Å¥µã»÷
     public void OnLoginButtonClick()
     {
       
         loginModal.SetActive(true);
 
-        loginModalGroup.alpha = 1;          // æ˜¾ç¤º
-        loginModalGroup.interactable = true; // å¯ç”¨äº¤äº’
-        loginModalGroup.blocksRaycasts = true; // é˜»æŒ¡å°„çº¿
-        Debug.Log("æ‰“å¼€ç™»å½•çª—å£");
+        loginModalGroup.alpha = 1;          // ÏÔÊ¾
+        loginModalGroup.interactable = true; // ÆôÓÃ½»»¥
+        loginModalGroup.blocksRaycasts = true; // ×èµ²ÉäÏß
+        Debug.Log("´ò¿ªµÇÂ¼´°¿Ú");
     }
 
-    // å…³é—­ç™»å½•çª—å£
+    // ¹Ø±ÕµÇÂ¼´°¿Ú
     public void OnCloseLoginModal()
     {
         
-        // æ¸…ç©ºè¾“å…¥
+        // Çå¿ÕÊäÈë
         if (usernameInput != null) usernameInput.text = "";
         if (passwordInput != null) passwordInput.text = "";
 
-        loginModalGroup.alpha = 0;          // é€æ˜
-        loginModalGroup.interactable = false; // ç¦ç”¨äº¤äº’
-        loginModalGroup.blocksRaycasts = false; // ä¸é˜»æŒ¡å°„çº¿
+        loginModalGroup.alpha = 0;          // Í¸Ã÷
+        loginModalGroup.interactable = false; // ½ûÓÃ½»»¥
+        loginModalGroup.blocksRaycasts = false; // ²»×èµ²ÉäÏß
         loginModal.SetActive(false);
         Canvas.ForceUpdateCanvases();
 
@@ -52,7 +54,7 @@ public class MainMenuController : MonoBehaviour
 
 
 
-    // ç¡®è®¤ç™»å½•
+    // È·ÈÏµÇÂ¼
     public void OnConfirmLogin()
     {
         string username = usernameInput.text;
@@ -60,51 +62,51 @@ public class MainMenuController : MonoBehaviour
 
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
-            Debug.LogWarning("ç”¨æˆ·åæˆ–å¯†ç ä¸èƒ½ä¸ºç©º");
+            Debug.LogWarning("ÓÃ»§Ãû»òÃÜÂë²»ÄÜÎª¿Õ");
             return;
         }
 
-        Debug.Log($"ç™»å½•å°è¯•: ç”¨æˆ·å={username}");
-        // è¿™é‡Œåº”è¯¥è°ƒç”¨å®é™…çš„ç™»å½•API
-        // ç®€åŒ–å¤„ç†ï¼šç›´æ¥å…³é—­å¼¹çª—
+        Debug.Log($"µÇÂ¼³¢ÊÔ: ÓÃ»§Ãû={username}");
+        // ÕâÀïÓ¦¸Ãµ÷ÓÃÊµ¼ÊµÄµÇÂ¼API
+        // ¼ò»¯´¦Àí£ºÖ±½Ó¹Ø±Õµ¯´°
 
         OnCloseLoginModal();
     }
 
-    // é»˜è®¤åœºæ™¯æŒ‰é’®
+    // Ä¬ÈÏ³¡¾°°´Å¥
     public void OnDefaultSceneClick()
     {
-        Debug.Log("è¿›å…¥é»˜è®¤åœºæ™¯");
-        // åŠ è½½é»˜è®¤åœºæ™¯ï¼ˆéœ€æå‰åˆ›å»ºï¼‰
+        Debug.Log("½øÈëÄ¬ÈÏ³¡¾°");
+        // ¼ÓÔØÄ¬ÈÏ³¡¾°£¨ĞèÌáÇ°´´½¨£©
         SceneManager.LoadScene("DefaultPhysicsScenes");
     }
 
-    // è‡ªå®šä¹‰åœºæ™¯æŒ‰é’®
+    // ×Ô¶¨Òå³¡¾°°´Å¥
     public void OnCustomSceneClick()
     {
-        Debug.Log("è¿›å…¥è‡ªå®šä¹‰åœºæ™¯ç¼–è¾‘å™¨");
+        Debug.Log("½øÈë×Ô¶¨Òå³¡¾°±à¼­Æ÷");
         SceneManager.LoadScene("CustomSceneEditor");
     }
 
-    // åœºæ™¯æ”¶è—æŒ‰é’®
+    // ³¡¾°ÊÕ²Ø°´Å¥
     public void OnFavoriteClick()
     {
-        Debug.Log("æ‰“å¼€åœºæ™¯æ”¶è—");
+        Debug.Log("´ò¿ª³¡¾°ÊÕ²Ø");
         SceneManager.LoadScene("FavoriteScenes");
     }
 
-    // å¯¼å…¥åœºæ™¯æŒ‰é’®
+    // µ¼Èë³¡¾°°´Å¥
     public void OnImportClick()
     {
-        Debug.Log("é€‰æ‹©å¯¼å…¥åœºæ™¯æ–‡ä»¶");
-        // è¿™é‡Œå¯ä»¥è°ƒç”¨æ–‡ä»¶é€‰æ‹©å™¨
-        // ç®€åŒ–ï¼šå¼¹å‡ºæç¤º
+        Debug.Log("Ñ¡Ôñµ¼Èë³¡¾°ÎÄ¼ş");
+        // ÕâÀï¿ÉÒÔµ÷ÓÃÎÄ¼şÑ¡ÔñÆ÷
+        // ¼ò»¯£ºµ¯³öÌáÊ¾
     }
 
-    // é€€å‡ºæŒ‰é’®
+    // ÍË³ö°´Å¥
     public void OnExitClick()
     {
-        Debug.Log("é€€å‡ºåº”ç”¨");
+        Debug.Log("ÍË³öÓ¦ÓÃ");
 
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
