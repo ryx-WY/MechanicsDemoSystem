@@ -5,27 +5,29 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// 全局UI控制器（统一管理所有UI的显示/隐藏）
-/// 挂载到Canvas上
+/// 全局UI控制器（统一管理UI显示/交互）
+/// 挂载到Canvas
 /// </summary>
 public class GlobalUIController : MonoBehaviour
 {
-    // 单例模式，全局唯一
+    // 单例模式
     public static GlobalUIController Instance;
 
-    [Header("UI引用")]
+    [Header("UI面板")]
     public GameObject sceneControlBar;       // 全局控制栏
-    public GameObject sceneSettingPanel;     // 场景参数面板
-    public GameObject objectSettingPanel;    // 物体可配置面板
-    public GameObject objectDisplayPanel;    // 物体实时展示面板
+    public GameObject sceneSettingPanel;     // 场景设置面板（重力）
+    public GameObject objectSettingPanel;    // 物体设置面板（质量/速度）
+    public GameObject objectDisplayPanel;    // 实时显示面板（速度）
 
-    [Header("控制按钮引用")]
-    public Button controlBtn;
-    public Button resetBtn;
-    public TMP_Text controlBtnText;
+    [Header("控制按钮")]
+    public Button controlBtn;        // 开始/暂停/继续按钮
+    public Button resetSceneBtn;     // 重置场景按钮（原重置按钮）
+    public Button resetBallBtn;      // 新增：重置小球按钮
+    public TMP_Text controlBtnText;  // 控制按钮文本
 
-    private bool isMotionRunning = false;    // 运动是否进行中
+    private bool isMotionRunning = false;    // 运动是否运行
     private bool isMotionPaused = false;     // 运动是否暂停
+    private bool isMotionLocked = false;     // 运动是否锁定（碰地面后）
 
     void Awake()
     {
@@ -35,7 +37,7 @@ public class GlobalUIController : MonoBehaviour
 
     void Start()
     {
-        // 初始化UI状态：显示可配置项，隐藏实时项
+        // 初始化UI状态
         InitUIState();
         // 绑定按钮事件
         BindButtonEvents();
@@ -51,8 +53,10 @@ public class GlobalUIController : MonoBehaviour
         objectSettingPanel.SetActive(true);
         objectDisplayPanel.SetActive(false);
         controlBtnText.text = "开始";
+        controlBtn.interactable = true; // 按钮可用
         isMotionRunning = false;
         isMotionPaused = false;
+        isMotionLocked = false;
     }
 
     /// <summary>
@@ -61,70 +65,109 @@ public class GlobalUIController : MonoBehaviour
     private void BindButtonEvents()
     {
         controlBtn.onClick.AddListener(OnControlClick);
-        resetBtn.onClick.AddListener(OnResetClick);
-        
+        resetSceneBtn.onClick.AddListener(OnResetSceneClick);
+        resetBallBtn.onClick.AddListener(OnResetBallClick);
     }
 
     /// <summary>
-    /// 合并按钮点击逻辑（统一处理开始/暂停/继续）
+    /// 控制按钮逻辑（开始/暂停/继续）
     /// </summary>
     public void OnControlClick()
     {
-        // 1. 未运行状态：执行“开始”逻辑
+        // 锁定状态下不响应
+        if (isMotionLocked) return;
+
+        // 1. 未运行：开始运动
         if (!isMotionRunning)
         {
             isMotionRunning = true;
             isMotionPaused = false;
-            controlBtnText.text = "暂停";  // 文本切换为“暂停”
+            controlBtnText.text = "暂停";
 
-            // 切换UI：隐藏可配置面板，显示实时速度面板
+            // 切换UI：隐藏设置面板，显示实时面板
             objectSettingPanel.SetActive(false);
             objectDisplayPanel.SetActive(true);
 
-            // 通知小球开始运动（复用原有方法）
+            // 通知小球开始运动
             FindObjectOfType<ObjectPhysicsController>().StartMotion();
         }
-        // 2. 已运行但未暂停：执行“暂停”逻辑
+        // 2. 运行中未暂停：暂停运动
         else if (isMotionRunning && !isMotionPaused)
         {
             isMotionPaused = true;
-            controlBtnText.text = "继续";  // 文本切换为“继续”
+            controlBtnText.text = "继续";
 
-            // 通知小球暂停运动（复用原有方法）
+            // 通知小球暂停
             FindObjectOfType<ObjectPhysicsController>().PauseMotion(true);
         }
-        // 3. 已运行且已暂停：执行“继续”逻辑
+        // 3. 运行中已暂停：恢复运动
         else if (isMotionRunning && isMotionPaused)
         {
             isMotionPaused = false;
-            controlBtnText.text = "暂停";  // 文本切换为“暂停”
+            controlBtnText.text = "暂停";
 
-            // 通知小球继续运动（复用原有方法）
+            // 通知小球恢复
             FindObjectOfType<ObjectPhysicsController>().PauseMotion(false);
         }
     }
 
-
     /// <summary>
-    /// 重置按钮点击
+    /// 重置场景（恢复所有默认参数）
     /// </summary>
-    public void OnResetClick()
+    public void OnResetSceneClick()
     {
-        // 恢复初始UI状态
+        // 重置UI状态
         InitUIState();
-        // 通知场景和物体重置
+        // 重置场景重力
         FindObjectOfType<ScenePhysicsController>().ResetScene();
+        // 重置小球参数
         FindObjectOfType<ObjectPhysicsController>().ResetObject();
-        // 相机重置
+        // 重置相机
         Camera2DTrajectoryViewer camera = FindObjectOfType<Camera2DTrajectoryViewer>();
         if (camera != null) camera.ResetCamera();
     }
 
- 
+    /// <summary>
+    /// 重置小球（保留当前参数，仅重置位置+轨迹）
+    /// </summary>
+    public void OnResetBallClick()
+    {
+        // 解锁按钮
+        isMotionLocked = false;
+        controlBtn.interactable = true;
+        // 重置UI状态
+        InitUIState();
+        // 通知小球重置
+        FindObjectOfType<ObjectPhysicsController>().ResetBall();
+    }
 
     /// <summary>
-    /// 外部获取运动状态（供物理脚本调用）
+    /// 小球碰地面后停止运动，锁定按钮
     /// </summary>
+    public void StopMotionOnGroundHit()
+    {
+        isMotionRunning = false;
+        isMotionPaused = false;
+        isMotionLocked = true;
+        controlBtnText.text = "结束";
+        controlBtn.interactable = false; // 禁用按钮
+        
+    }
+
+    /// <summary>
+    /// 重置小球后的UI状态恢复
+    /// </summary>
+    public void ResetBallUIState()
+    {
+        isMotionRunning = false;
+        isMotionPaused = false;
+        controlBtnText.text = "开始";
+        objectSettingPanel.SetActive(true);
+        objectDisplayPanel.SetActive(false);
+        controlBtn.interactable = true;
+    }
+
+    // 外部获取运动状态
     public bool IsMotionRunning() => isMotionRunning;
     public bool IsMotionPaused() => isMotionPaused;
 }

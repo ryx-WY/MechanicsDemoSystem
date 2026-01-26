@@ -109,11 +109,13 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("退出应用");
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+    // 编辑器环境：停止Play模式
+    UnityEditor.EditorApplication.isPlaying = false;
 #else
+        // 打包后环境：退出应用程序
         Application.Quit();
 #endif
     }
-    
+
 
 }

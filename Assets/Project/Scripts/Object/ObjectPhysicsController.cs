@@ -2,61 +2,67 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// 单个物理物体控制器（管理单物体参数+速度计算）
-/// 挂载到平抛小球ProjectileBall
-/// </summary>
 public class ObjectPhysicsController : MonoBehaviour
 {
-    [Header("物体引用")]
+    [Header("物理参数")]
     public Rigidbody rb;
 
-    [Header("物体参数")]
+    [Header("初始参数")]
     public float objectMass = 1f;
     public float initialVelocity = 5f;
 
-    [Header("UI引用 - 可配置项")]
+    [Header("UI引用 - 参数设置")]
     public Slider massSlider;
     public TMP_InputField massInput;
     public Slider velocitySlider;
     public TMP_InputField velocityInput;
 
-    [Header("UI引用 - 实时速度展示（仅显示）")]
+    [Header("UI引用 - 实时速度显示（文本赋值）")]
     public TMP_Text horizontalSpeedText;
     public TMP_Text verticalSpeedText;
     public TMP_Text totalSpeedText;
 
-    // 原有变量
-    private float motionStartTime;    // 运动开始时间
-    private float horizontalSpeed;    // 实时水平速度
-    private float verticalSpeed;      // 实时竖直速度
-    private float totalSpeed;         // 实时合速度
+    // 运动相关
+    private float motionStartTime;
+    private float horizontalSpeed;
+    private float verticalSpeed;
+    private float totalSpeed;
     public TrajectoryDrawer trajectoryDrawer;
 
-    // 新增：暂停相关缓存变量（修复速度丢失核心）
-    private Vector3 cachedVelocity;       // 暂停时缓存的速度
-    private Vector3 cachedAngularVelocity; // 暂停时缓存的角速度
-    private float pauseStartTime;         // 暂停开始的时间戳
-    private float totalPausedTime;        // 总暂停时长（用于修正运动时间）
+    // 暂停/恢复相关
+    private Vector3 cachedVelocity;
+    private Vector3 cachedAngularVelocity;
+    private float pauseStartTime;
+    private float totalPausedTime;
 
     void Start()
     {
-        // 初始化物体参数
         InitObjectParams();
-        // 绑定滑块和输入框事件
         BindSliderEvents();
-        // 初始化刚体状态
         rb.isKinematic = true;
         rb.useGravity = false;
-        // 初始化速度显示
         UpdateSpeedDisplay(initialVelocity, 0, initialVelocity);
-        // 初始化暂停相关变量
         totalPausedTime = 0;
+    }
+
+    // 碰撞检测：小球碰到地面停止
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;
+            // 停止当前轨迹记录
+            trajectoryDrawer.StopCurrentTrajectory();
+            // 通知UI锁定按钮
+            GlobalUIController.Instance.StopMotionOnGroundHit();
+        }
     }
 
     void Update()
     {
-        // 仅在运动中且未暂停时计算速度
         if (GlobalUIController.Instance.IsMotionRunning() && !GlobalUIController.Instance.IsMotionPaused())
         {
             CalculateSpeed();
@@ -64,51 +70,155 @@ public class ObjectPhysicsController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 初始化物体参数（同步滑块和输入框）
-    /// </summary>
-    private void InitObjectParams()
-    {
-        // 质量初始化
-        objectMass = massSlider.value;
-        string massDisplay = objectMass.ToString("F2");
-        massInput.text = massDisplay;
-        rb.mass = objectMass;
+   
 
-        // 初速度初始化
-        initialVelocity = velocitySlider.value;
-        string velocityDisplay = initialVelocity.ToString("F2");
-        velocityInput.text = velocityDisplay;
+    /// <summary>
+    /// 计算平抛运动速度
+    /// </summary>
+    private void CalculateSpeed()
+    {
+        float motionTime = (Time.time - totalPausedTime) - motionStartTime;
         horizontalSpeed = initialVelocity;
+        verticalSpeed = ScenePhysicsController.Instance.globalGravity * motionTime;
+        totalSpeed = Mathf.Sqrt(Mathf.Pow(horizontalSpeed, 2) + Mathf.Pow(verticalSpeed, 2));
+
+        if (!rb.isKinematic)
+        {
+            rb.AddForce(Vector3.down * ScenePhysicsController.Instance.globalGravity * objectMass, ForceMode.Force);
+        }
     }
 
     /// <summary>
-    /// 绑定滑块和输入框事件
+    /// 更新速度显示文本
     /// </summary>
+    private void UpdateSpeedDisplay(float vx, float vy, float vTotal)
+    {
+        horizontalSpeedText.text = vx.ToString("F2");
+        verticalSpeedText.text = vy.ToString("F2");
+        totalSpeedText.text = vTotal.ToString("F2");
+        horizontalSpeedText.color = Color.blue;
+        verticalSpeedText.color = Color.red;
+        totalSpeedText.color = Color.green;
+    }
+
+    /// <summary>
+    /// 开始运动（关键修改：启动新轨迹记录）
+    /// </summary>
+    public void StartMotion()
+    {
+        rb.isKinematic = false;
+        rb.velocity = new Vector3(initialVelocity, 0, 0);
+        motionStartTime = Time.time;
+        totalPausedTime = 0;
+        // 通知轨迹管理器开始记录新轨迹
+        trajectoryDrawer.StartCurrentTrajectory();
+    }
+
+    /// <summary>
+    /// 暂停/恢复运动
+    /// </summary>
+    public void PauseMotion(bool isPause)
+    {
+        if (isPause)
+        {
+            cachedVelocity = rb.velocity;
+            cachedAngularVelocity = rb.angularVelocity;
+            pauseStartTime = Time.time;
+            rb.isKinematic = true;
+        }
+        else
+        {
+            rb.isKinematic = false;
+            rb.velocity = cachedVelocity;
+            rb.angularVelocity = cachedAngularVelocity;
+            totalPausedTime += Time.time - pauseStartTime;
+        }
+    }
+
+    /// <summary>
+    /// 重置小球（仅重置位置，保留历史轨迹）
+    /// </summary>
+    public void ResetBall()
+    {
+        // 停止当前轨迹记录（如果正在记录）
+        trajectoryDrawer.StopCurrentTrajectory();
+
+        // 修复核心：先取消运动学状态，再设置速度/角速度（避免警告）
+        rb.isKinematic = false; // 临时取消kinematic
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero; // 此时刚体非kinematic，设置有效
+        rb.isKinematic = true; // 恢复kinematic
+
+        // 重置小球位置
+        transform.position = new Vector3(0, 20, 0); // 初始位置
+
+        // 重置速度显示和暂停变量
+        UpdateSpeedDisplay(initialVelocity, 0, initialVelocity);
+        totalPausedTime = 0;
+        cachedVelocity = Vector3.zero;
+
+        // 通知UI解锁
+        GlobalUIController.Instance.ResetBallUIState();
+    }
+
+    /// <summary>
+    /// 重置物体（重置场景时调用，清空所有轨迹）
+    /// </summary>
+    public void ResetObject()
+    {
+        // 清空所有历史轨迹
+        trajectoryDrawer.ClearAllTrajectories();
+
+        // 修复核心：调整顺序，先取消kinematic再设置速度
+        rb.isKinematic = false; // 临时取消运动学状态
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero; // 此时设置不会触发警告
+        rb.isKinematic = true; // 恢复运动学状态
+
+        // 重置小球位置
+        transform.position = new Vector3(0, 20, 0);
+
+        // 恢复默认参数
+        objectMass = 1f;
+        initialVelocity = 5f;
+        InitObjectParams();
+        UpdateSpeedDisplay(initialVelocity, 0, initialVelocity);
+
+
+        // 重置暂停变量
+        totalPausedTime = 0;
+        cachedVelocity = Vector3.zero;
+        objectMass = 1f;
+        initialVelocity = 5f;
+}
+
+
+    private void InitObjectParams()
+    {
+        objectMass = massSlider.value;
+        massInput.text = objectMass.ToString("F2");
+        rb.mass = objectMass;
+
+        initialVelocity = velocitySlider.value;
+        velocityInput.text = initialVelocity.ToString("F2");
+        horizontalSpeed = initialVelocity;
+    }
+
     private void BindSliderEvents()
     {
-        // 滑块事件
         massSlider.onValueChanged.AddListener(OnMassChanged);
         velocitySlider.onValueChanged.AddListener(OnVelocityChanged);
-        // 输入框事件
         massInput.onEndEdit.AddListener(OnMassInputChanged);
         velocityInput.onEndEdit.AddListener(OnVelocityInputChanged);
     }
 
-    /// <summary>
-    /// 质量滑块变化回调
-    /// </summary>
     public void OnMassChanged(float value)
     {
         objectMass = value;
-        string displayValue = value.ToString("F2");
-        massInput.text = displayValue;
+        massInput.text = value.ToString("F2");
         rb.mass = value;
     }
 
-    /// <summary>
-    /// 质量输入框输入回调
-    /// </summary>
     private void OnMassInputChanged(string inputValue)
     {
         if (float.TryParse(inputValue, out float value))
@@ -124,25 +234,17 @@ public class ObjectPhysicsController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 初速度滑块变化回调
-    /// </summary>
     public void OnVelocityChanged(float value)
     {
         initialVelocity = value;
-        string displayValue = value.ToString("F2");
-        velocityInput.text = displayValue;
+        velocityInput.text = value.ToString("F2");
         horizontalSpeed = value;
-        // 未运动时更新速度显示
         if (!GlobalUIController.Instance.IsMotionRunning())
         {
             UpdateSpeedDisplay(horizontalSpeed, 0, horizontalSpeed);
         }
     }
 
-    /// <summary>
-    /// 初速度输入框输入回调
-    /// </summary>
     private void OnVelocityInputChanged(string inputValue)
     {
         if (float.TryParse(inputValue, out float value))
@@ -151,7 +253,6 @@ public class ObjectPhysicsController : MonoBehaviour
             initialVelocity = value;
             velocitySlider.value = value;
             horizontalSpeed = value;
-            // 未运动时更新速度显示
             if (!GlobalUIController.Instance.IsMotionRunning())
             {
                 UpdateSpeedDisplay(horizontalSpeed, 0, horizontalSpeed);
@@ -160,107 +261,6 @@ public class ObjectPhysicsController : MonoBehaviour
         else
         {
             velocityInput.text = initialVelocity.ToString("F2");
-        }
-    }
-
-    /// <summary>
-    /// 计算平抛运动速度（修复：扣除暂停时间，确保时间连续）
-    /// </summary>
-    private void CalculateSpeed()
-    {
-        // 关键修复：运动时间 = 当前时间 - 总暂停时间 - 运动开始时间（排除暂停时长）
-        float motionTime = (Time.time - totalPausedTime) - motionStartTime;
-
-        // 水平速度（恒定，恢复时不丢失）
-        horizontalSpeed = initialVelocity;
-
-        // 竖直速度（v = g*t，时间连续，无突变）
-        verticalSpeed = ScenePhysicsController.Instance.globalGravity * motionTime;
-
-        // 合速度（矢量和）
-        totalSpeed = Mathf.Sqrt(Mathf.Pow(horizontalSpeed, 2) + Mathf.Pow(verticalSpeed, 2));
-
-        // 应用重力（仅在非Kinematic状态下生效）
-        if (!rb.isKinematic)
-        {
-            rb.AddForce(Vector3.down * ScenePhysicsController.Instance.globalGravity * objectMass, ForceMode.Force);
-        }
-    }
-
-    /// <summary>
-    /// 更新速度显示文本
-    /// </summary>
-    private void UpdateSpeedDisplay(float vx, float vy, float vTotal)
-    {
-        // 保留两位小数显示
-        horizontalSpeedText.text = vx.ToString("F2");
-        verticalSpeedText.text = vy.ToString("F2");
-        totalSpeedText.text = vTotal.ToString("F2");
-        // 颜色区分
-        horizontalSpeedText.color = new Color(0, 0, 1);   // 蓝色
-        verticalSpeedText.color = new Color(1, 0, 0);     // 红色
-        totalSpeedText.color = new Color(0, 1, 0);       // 绿色
-    }
-
-    /// <summary>
-    /// 开始物体运动（初始化暂停相关变量）
-    /// </summary>
-    public void StartMotion()
-    {
-        rb.isKinematic = false;
-        rb.velocity = new Vector3(initialVelocity, 0, 0);
-        motionStartTime = Time.time;
-        totalPausedTime = 0; // 重置暂停时间，避免影响首次运动
-    }
-
-    /// <summary>
-    /// 暂停/继续物体运动（核心修复：缓存速度+修正时间）
-    /// </summary>
-    public void PauseMotion(bool isPause)
-    {
-        if (isPause)
-        {
-            // 暂停逻辑：缓存当前速度+记录暂停开始时间
-            cachedVelocity = rb.velocity;                // 保存暂停前的速度（含水平/竖直）
-            cachedAngularVelocity = rb.angularVelocity;  // 保存角速度（防止旋转丢失）
-            pauseStartTime = Time.time;                  // 记录暂停开始时间
-            rb.isKinematic = true;                       // 停止物理运动（但速度已缓存）
-        }
-        else
-        {
-            // 继续逻辑：恢复速度+修正运动时间
-            rb.isKinematic = false;                      // 先启用物理运动
-            rb.velocity = cachedVelocity;                // 恢复暂停前的速度（关键：水平速度不丢失）
-            rb.angularVelocity = cachedAngularVelocity;  // 恢复角速度
-            // 计算本次暂停时长，累加到总暂停时间（修正后续运动时间计算）
-            float currentPauseTime = Time.time - pauseStartTime;
-            totalPausedTime += currentPauseTime;
-        }
-    }
-
-    /// <summary>
-    /// 重置物体状态
-    /// </summary>
-    public void ResetObject()
-    {
-        // 1. 先取消Kinematic状态（避免设置速度警告）
-        rb.isKinematic = false;
-        // 2. 重置速度和角速度
-        rb.velocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-        // 3. 恢复Kinematic状态
-        rb.isKinematic = true;
-        // 回到初始位置
-        transform.position = new Vector3(0, 20, 0);
-        // 恢复参数
-        InitObjectParams();
-        // 重置暂停相关变量
-        totalPausedTime = 0;
-        cachedVelocity = Vector3.zero;
-        // 清空轨迹
-        if (trajectoryDrawer != null)
-        {
-            trajectoryDrawer.ClearTrajectory();
         }
     }
 }
