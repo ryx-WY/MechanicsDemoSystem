@@ -41,18 +41,16 @@ public class SceneController : MonoBehaviour
             sceneObjects.Add(obj);
     }
 
+    // SceneController.cs 中触发小球启动的逻辑
     public void StartSimulation()
     {
-        if (CurrentState == SimulationState.Running) return;
-
-        Time.timeScale = 1f;
         CurrentState = SimulationState.Running;
-
         foreach (var obj in sceneObjects)
         {
-            obj.OnSimulationStart();
+            obj.OnSimulationStart(); // 该方法内会设置 rb.velocity = initialVelocity
         }
     }
+
 
     public void PauseSimulation()
     {

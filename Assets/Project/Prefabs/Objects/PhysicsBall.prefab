@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 1062157994634114396}
   - component: {fileID: 7388410311346074561}
   - component: {fileID: 4366906143825688538}
-  - component: {fileID: 4121437327511143540}
   m_Layer: 0
   m_Name: PhysicsBall
   m_TagString: Untagged
@@ -239,15 +238,3 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
---- !u!114 &4121437327511143540
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1211958844465281644}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 024c887b9a3bd5544bcc1ca7b0fa2bb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

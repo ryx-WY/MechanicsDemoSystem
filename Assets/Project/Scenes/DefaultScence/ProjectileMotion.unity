@@ -338,7 +338,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 552b9538e0fa7634aa6f0b76b0aafa31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetBall: {fileID: 1643889864}
+  targetBall: {fileID: 1643889869}
   followOffset: {x: 0, y: 2}
   useSmoothFollow: 0
   followSmooth: 0.05
@@ -556,6 +556,41 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 290171885}
   m_CullTransparentMesh: 1
+--- !u!1 &295655485
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 295655486}
+  m_Layer: 5
+  m_Name: PanelContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &295655486
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 295655485}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 604305892}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchoredPosition: {x: -21, y: 502}
+  m_SizeDelta: {x: 1, y: 1}
+  m_Pivot: {x: 1, y: 0.5}
 --- !u!1 &360799330
 GameObject:
   m_ObjectHideFlags: 0
@@ -939,6 +974,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 295655486}
   - {fileID: 1870624523}
   - {fileID: 1796789862}
   - {fileID: 1305631407}
@@ -1224,7 +1260,7 @@ MonoBehaviour:
   lineWidth: 0.05
   recordInterval: 0.05
   minRecordDistance: 0.1
-  trajectoryParent: {fileID: 0}
+  trajectoryParent: {fileID: 1643889868}
 --- !u!1 &921068091
 GameObject:
   m_ObjectHideFlags: 0
@@ -2184,17 +2220,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e47d24f8bcf068b45bb975342779e6a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1643889864 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4121437327511143540, guid: 46fb9136f3c1dca4f9bab2a22c6e9ce6, type: 3}
+--- !u!4 &1643889868 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3060171408975610536, guid: 46fb9136f3c1dca4f9bab2a22c6e9ce6, type: 3}
   m_PrefabInstance: {fileID: 8867856674086975536}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1643889869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1493312560}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 024c887b9a3bd5544bcc1ca7b0fa2bb7, type: 3}
+  m_Script: {fileID: 11500000, guid: 4f24f1919b7a7594196372ddb9f73cc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  rb: {fileID: 1643889862}
+  trajectoryLine: {fileID: 1643889861}
+  initialPosition: {x: 0, y: 20, z: 0}
+  initialVelocity: {x: 5, y: 0, z: 0}
+  objectConfig: {fileID: 11400000, guid: 40a3b081415076f4bb045dc2a05ffd38, type: 2}
 --- !u!1 &1729604292
 GameObject:
   m_ObjectHideFlags: 0
@@ -2632,7 +2679,7 @@ MonoBehaviour:
   controlBtnText: {fileID: 290171887}
   resetBtn: {fileID: 1747028313}
   clearBtn: {fileID: 1081461173}
-  panelParent: {fileID: 604305892}
+  panelParent: {fileID: 295655486}
 --- !u!1 &1943163989
 GameObject:
   m_ObjectHideFlags: 0
@@ -2984,6 +3031,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1211958844465281644, guid: 46fb9136f3c1dca4f9bab2a22c6e9ce6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1643889863}
+    - targetCorrespondingSourceObject: {fileID: 1211958844465281644, guid: 46fb9136f3c1dca4f9bab2a22c6e9ce6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1643889869}
   m_SourcePrefab: {fileID: 100100000, guid: 46fb9136f3c1dca4f9bab2a22c6e9ce6, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

@@ -2,63 +2,78 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// 平抛场景UI总控制器
-/// </summary>
 public class SceneUIController : MonoBehaviour
 {
     [Header("面板预制体")]
-    [SerializeField] private GameObject settingPanelPrefab;
-    [SerializeField] private GameObject displayPanelPrefab;
-
+    public GameObject settingPanelPrefab;
+    public GameObject displayPanelPrefab;
     [Header("场景控制按钮")]
-    [SerializeField] private Button controlBtn;
-    [SerializeField] private TextMeshProUGUI controlBtnText;
-    [SerializeField] private Button resetBtn;      // 重置小球
-    [SerializeField] private Button clearBtn;      // 重置场景
-
+    public Button controlBtn;
+    public TextMeshProUGUI controlBtnText;
+    public Button resetBtn;
+    public Button clearBtn;
     [Header("面板挂载点")]
-    [SerializeField] private Transform panelParent;
+    public Transform panelParent;
 
     private SettingPanel settingPanel;
     private DisplayPanel displayPanel;
-    private ProjectileObject projectileObject;
+    private PhysicsBall physicsBall;
+    private PhysicsObjectConfig ballConfig;
 
     void Start()
     {
-        projectileObject = FindObjectOfType<ProjectileObject>();
-        if (projectileObject == null)
+        // 查找通用小球（替代原 ProjectileObject）
+        physicsBall = FindObjectOfType<PhysicsBall>();
+        if (physicsBall == null)
         {
-            Debug.LogError("场景中未找到ProjectileObject！");
+            Debug.LogError("场景中未找到 PhysicsBall！");
             return;
         }
 
-        SceneController.Instance.RegisterObject(projectileObject);
+        // 获取小球的配置文件
+        ballConfig = physicsBall.objectConfig;
+        // 修复：通过 ScriptableObject 调用 CreateInstance
+        if (ballConfig == null)
+        {
+            ballConfig = ScriptableObject.CreateInstance<PhysicsObjectConfig>();
+            physicsBall.objectConfig = ballConfig;
+        }
 
-        CreatePanels();
-
-        controlBtn.onClick.AddListener(OnControlClick);
-        resetBtn.onClick.AddListener(OnResetClick);
-        clearBtn.onClick.AddListener(OnClearClick);
-
+        // 注册物体到场景控制器
+        SceneController.Instance.RegisterObject(physicsBall);
+        // 创建动态面板
+        CreateDynamicPanels();
+        // 绑定按钮事件
+        BindButtonEvents();
+        // 默认进入设置模式
         SwitchToSettingMode();
     }
 
-    void CreatePanels()
+    // 创建动态面板（设置+显示）
+    private void CreateDynamicPanels()
     {
+        // 1. 设置面板
         GameObject settingObj = Instantiate(settingPanelPrefab, panelParent);
         settingPanel = settingObj.GetComponent<SettingPanel>();
-        settingPanel.BindObject(projectileObject);
+        settingPanel.BindObject(physicsBall, ballConfig);
 
+        // 2. 显示面板
         GameObject displayObj = Instantiate(displayPanelPrefab, panelParent);
         displayPanel = displayObj.GetComponent<DisplayPanel>();
-        displayPanel.BindObject(projectileObject);
+        displayPanel.BindObject(physicsBall, ballConfig);
+    }
+
+    // 绑定按钮事件
+    private void BindButtonEvents()
+    {
+        controlBtn.onClick.AddListener(OnControlClick);
+        resetBtn.onClick.AddListener(OnResetClick);
+        clearBtn.onClick.AddListener(OnClearClick);
     }
 
     void OnControlClick()
     {
         var state = SceneController.Instance.CurrentState;
-
         switch (state)
         {
             case SimulationState.Idle:
@@ -67,12 +82,10 @@ public class SceneUIController : MonoBehaviour
                 controlBtnText.text = "暂停";
                 SwitchToDisplayMode();
                 break;
-
             case SimulationState.Running:
                 SceneController.Instance.PauseSimulation();
                 controlBtnText.text = "继续";
                 break;
-
             case SimulationState.Paused:
                 SceneController.Instance.ResumeSimulation();
                 controlBtnText.text = "暂停";
@@ -86,9 +99,12 @@ public class SceneUIController : MonoBehaviour
         controlBtnText.text = "开始";
         SwitchToSettingMode();
 
-        // 新增：重置相机跟踪
-        Camera2DTrajectoryViewer camera = FindObjectOfType<Camera2DTrajectoryViewer>();
-        if (camera != null) camera.ResetCamera();
+        // 关键修复：重新绑定物体，让 SettingPanel 读取最新默认参数（X=5）
+        settingPanel.BindObject(physicsBall, ballConfig);
+
+        // 重置相机
+        var camera = FindObjectOfType<Camera2DTrajectoryViewer>();
+        camera?.ResetCamera();
     }
 
     void OnClearClick()
@@ -97,20 +113,23 @@ public class SceneUIController : MonoBehaviour
         controlBtnText.text = "开始";
         SwitchToSettingMode();
 
-        // 新增：重置相机跟踪
-        Camera2DTrajectoryViewer camera = FindObjectOfType<Camera2DTrajectoryViewer>();
-        if (camera != null) camera.ResetCamera();
+        // 关键修复：重新绑定物体，同步默认参数
+        settingPanel.BindObject(physicsBall, ballConfig);
+
+        // 重置相机
+        var camera = FindObjectOfType<Camera2DTrajectoryViewer>();
+        camera?.ResetCamera();
     }
 
     void SwitchToSettingMode()
     {
-        settingPanel.Show();
-        displayPanel.Hide();
+        settingPanel?.Show();
+        displayPanel?.Hide();
     }
 
     void SwitchToDisplayMode()
     {
-        settingPanel.Hide();
-        displayPanel.Show();
+        settingPanel?.Hide();
+        displayPanel?.Show();
     }
 }
